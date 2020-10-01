@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Button, TextField, Container } from '@material-ui/core';
+import { Button, TextField, Container, Grid } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -45,10 +45,10 @@ export default function Home() {
     const [check, setCheck] = useState(false)
     const [weather, setWeather] = useState({})
     const [flag, setFlag] = useState(false)
+    const [error, setError] = useState()
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        console.log(country)
         axios.get(`https://restcountries.eu/rest/v2/name/${country}`).then(res => {
             setData(res)
             setCheck(true)
@@ -59,8 +59,14 @@ export default function Home() {
 
     const getCapital = (data) => {
         axios.get(`http://api.weatherstack.com/current?access_key=f34fc1ce71806010d1c260671b62d067&query=${data}`).then(res => {
-            setWeather(res.data.current)
-            setFlag(true)
+            console.log(res.data.success)
+            if (res.data.success !== false) {
+                setWeather(res.data.current)
+                setFlag(true)
+            }
+            else {
+                setError("Data is Not Available")
+            }
         }).catch(err => {
             console.log(err)
         })
@@ -70,10 +76,14 @@ export default function Home() {
         setCheck(false)
         setWeather()
         setFlag(false)
+        setError()
     }
+
+
 
     return (
         <Container maxWidth="lg">
+
             { !check ?
                 <form onSubmit={(e) => handleSubmit(e)} className={classes.root} noValidate autoComplete="off">
                     <div>
@@ -82,69 +92,78 @@ export default function Home() {
                     <Button type="submit" variant="contained" color="primary" disabled={!country ? true : false}>Submit</Button>
                 </form>
                 :
-                <div>
 
-                    <Button type="button" color="primary" onClick={clear} variant="contained">Back</Button>
-                    <br /><br />
-                    <TableContainer component={Paper}>
-                        <Table className={classes.table} aria-label="simple table">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell align="center">Name</TableCell>
-                                    <TableCell align="center">Capital</TableCell>
-                                    <TableCell align="center">Population</TableCell>
-                                    <TableCell align="center">Lat/Lang</TableCell>
-                                    <TableCell align="center">Flag</TableCell>
-                                    <TableCell align="center">Action</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {data.data.map((row) => (
-                                    <TableRow key={row.name}>
-                                        <TableCell component="th" scope="row">
-                                            {row.name}
-                                        </TableCell>
-                                        <TableCell align="center">{row.capital}</TableCell>
-                                        <TableCell align="center">{row.population}</TableCell>
-                                        <TableCell align="center">{row.latlng}</TableCell>
-                                        <TableCell align="center"><img src={row.flag} width="50px" alt="country" /></TableCell>
-                                        <TableCell align="center">
-                                            <Button onClick={() => getCapital(row.capital)} type="button" color="primary" variant="contained">Capital Weather</Button>
-                                        </TableCell>
+                <Grid container spacing={3}>
+
+                    <Grid item xs={8}>
+                        <Button type="button" color="primary" onClick={clear} variant="contained">Back</Button>
+                        <br /><br />
+                        <TableContainer component={Paper}>
+                            <Table className={classes.table} aria-label="simple table">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell align="center">Name</TableCell>
+                                        <TableCell align="center">Capital</TableCell>
+                                        <TableCell align="center">Population</TableCell>
+                                        <TableCell align="center">Lat/Lang</TableCell>
+                                        <TableCell align="center">Flag</TableCell>
+                                        <TableCell align="center">Action</TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                    <br />
-                    <br />
+                                </TableHead>
+                                <TableBody>
+                                    {data.data.map((row) => (
+                                        <TableRow key={row.name}>
+                                            <TableCell component="th" scope="row">
+                                                {row.name}
+                                            </TableCell>
+                                            <TableCell align="center">{row.capital}</TableCell>
+                                            <TableCell align="center">{row.population}</TableCell>
+                                            <TableCell align="center">{row.latlng}</TableCell>
+                                            <TableCell align="center"><img src={row.flag} width="50px" alt="country" /></TableCell>
+                                            <TableCell align="center">
+                                                <Button onClick={() => getCapital(row.capital)} type="button" color="primary" variant="contained">Capital Weather</Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <br />
+                        <br />
+                    </Grid>
+                    <Grid item xs={4}>
+                        <div style={{marginTop : '55px'}}>
+                            {
+                                !error ?
 
-                    <div>
-                        {
-                            flag ?
-                                <Card className={classes.root}>
-                                    <CardContent>
-                                        <Typography variant="h5" component="h2">
-                                            Temperature : {weather.temperature} deg C {weather.weather_icons ? <img src={weather.weather_icons} width="20px" alt="icon" /> : null}
-                                        </Typography>
-                                        <Typography className={classes.pos} color="textSecondary">
-                                            Wind Speed :  {weather.wind_speed}
-                                        </Typography>
-                                        <Typography variant="body2" component="p">
-                                            Precip :  {weather.precip}
+                                    flag ?
+                                        <Card className={classes.root}>
+                                            <CardContent>
+                                                <Typography variant="h5" component="h2">
+                                                    Temperature : {weather.temperature} deg C {weather.weather_icons.length > 0 ? <img src={weather.weather_icons} width="20px" alt="icon" /> : null}
+                                                </Typography>
+                                                <Typography className={classes.pos} color="textSecondary">
+                                                    Wind Speed :  {weather.wind_speed}
+                                                </Typography>
+                                                <Typography variant="body2" component="p">
+                                                    Precip :  {weather.precip}
 
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
+                                                </Typography>
+                                            </CardContent>
+                                        </Card>
 
-                                :
-                                null
+                                        :
+                                        null
+                                    :
+                                    <Typography variant="h5" component="h2">
+                                        {error}
+                                    </Typography>
 
-                        }
+                            }
 
-                    </div>
-
-                </div>
+                        </div>
+                        </Grid>
+                </Grid>
             }
         </Container>
     )
